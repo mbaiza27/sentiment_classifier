@@ -43,8 +43,9 @@ def pre_proccessing():
     featuredTestData = convert_to_features(testData)
 
     #Now print output to files
+    write_output(trainingOutput, featuredTrainingData)
+    write_output(testOutput, featuredTestData)
     
-
 ########################################
 def get_training_data(trainingFileName):
     print("Retrieving training data...")
@@ -145,9 +146,23 @@ def convert_to_features(data):
         vectors.append(vector)
 
     return vectors
+###################################################################
+def write_output(outFile, featuredVectors):
+    file = open(outFile, "w")
 
+    for word in vocab:
+        file.write(word)
+        file.write(',')
+    
+    file.write("classlabel\n")
 
+    for i in featuredVectors:
+        for string in i:
+            file.write(str(string))
+            file.write(",")
+        file.write("\n")
 
+    file.close()
 
 ######################
 #   Classification   #
