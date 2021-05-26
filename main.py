@@ -23,8 +23,8 @@ def pre_proccessing():
 
     trainingSet = "trainingSet.txt"
     testSet = "testSet.txt"
-    trainingOutput = "training_out.txt"
-    testOutput = "test_out.txt"
+    trainingOutput = "preprocessed_train.txt"
+    testOutput = "preprocessed_test.txt"
 
     #Gets the training data from the provided text file in the form of a list
     trainingData = get_training_data(trainingSet)
@@ -169,7 +169,9 @@ def write_output(outFile, featuredVectors):
 #   Classification   #
 ######################
 
-def predict_labels(trainData, testData):
+
+
+def predict_labels(trainData, testData, trainName, testName):
     trainData = np.array(trainData)
     testData = np.array(testData)
     testLabels = []
@@ -222,13 +224,18 @@ def predict_labels(trainData, testData):
             testLabels.append(0)
         else:
             testLabels.append(1)
+    accuracy = np.count_nonzero(np.equal(trueTestLabels, testLabels))/len(testLabels)
+    f = open("results.txt", "a")
+    f.write("RESULTS -- Trained on: " + trainName + " |  Tested on: " + testName + "\n")
+    f.write("Accuracy: " + str(accuracy) + "\n")
     print(np.count_nonzero(np.equal(trueTestLabels, testLabels))/len(testLabels))
         # break
 ###################
 #   Run program   #
 ###################
 train, test = pre_proccessing()
-predict_labels(train, test)
+predict_labels(train, train, "TRAINING SET", "TRAINING SET")
+predict_labels(train, test, "TRAINING SET", "TEST SET")
 # print(train[0])
 # print(test[0])
 # print("Vocab: ", vocab)

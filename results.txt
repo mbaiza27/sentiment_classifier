@@ -1,0 +1,4 @@
+RESULTS -- Trained on: TRAINING SET |  Tested on: TRAINING SET
+Accuracy: 0.9559118236472945
+RESULTS -- Trained on: TRAINING SET |  Tested on: TEST SET
+Accuracy: 0.7565392354124748
