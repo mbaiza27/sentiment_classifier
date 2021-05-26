@@ -2,7 +2,7 @@
 #By: Marc Baiza and Stephen Oh
 import codecs
 import math
-
+import numpy as np
 ######################
 #   Pre-Processing   #
 ######################
@@ -45,14 +45,16 @@ def pre_proccessing():
     #Now print output to files
     write_output(trainingOutput, featuredTrainingData)
     write_output(testOutput, featuredTestData)
-    
+
+    return featuredTrainingData, featuredTestData
+
 ########################################
 def get_training_data(trainingFileName):
     print("Retrieving training data...")
 
     #Open file
     trainingFile = open(trainingFileName)
-    
+
     #Read data from file
     trainingData = trainingFile.readlines()
 
@@ -71,7 +73,7 @@ def clean_training_data(trainingData):
 
     for line in trainingData:
         vocabWord = str()
-        
+
         for char in line:
             if char not in edgeCaseChars:
                 #This means that there is no characters interupting words
@@ -84,14 +86,14 @@ def clean_training_data(trainingData):
 
                     if wordLength > 0:
                         vocab.add(vocabWord)
-        
+
                     #Reset the word for the next word in the line
                     vocabWord = str()
 
                 else: #append char to word
                     lowerChar = char.lower()
                     vocabWord += lowerChar
-    
+
     #Print vocab for testing
     #print(vocab)
     #After stripping is finished make a sorted list
@@ -107,7 +109,7 @@ def convert_to_features(data):
         #Similar process to clean_training_data
         wordList = list()
         vocabWord = str()
-        
+
         for char in line:
             if char not in edgeCaseChars:
                 #This means that there is no characters interupting words
@@ -120,7 +122,7 @@ def convert_to_features(data):
 
                     if wordLength > 0:
                         wordList.append(vocabWord)
-        
+
                     #Reset the word for the next word in the line
                     vocabWord = str()
 
@@ -153,7 +155,7 @@ def write_output(outFile, featuredVectors):
     for word in vocab:
         file.write(word)
         file.write(',')
-    
+
     file.write("classlabel\n")
 
     for i in featuredVectors:
@@ -168,9 +170,66 @@ def write_output(outFile, featuredVectors):
 #   Classification   #
 ######################
 
+def predict_labels(trainData, testData):
+    trainData = np.array(trainData)
+    testData = np.array(testData)
+    testLabels = []
+    trueTestLabels = testData[:,-1]
+    trainLabels = trainData[:,-1]
+    numFeatures = len(testData[0]) - 1
+    probArray = np.zeros(shape=(4,numFeatures))
+    print("First probArray:", probArray)
+    for i in range(numFeatures):  #for every word in sentence
+        totalzerosbad, totalzerosgood, totalonesbad,totalonesgood = 0,0,0,0
+        #The array showing whether the word appears in the training sentences or not
+        wordLabels = trainData[:,i]
+        # print(len(wordLabels))
+        # print(wordLabels)
+        for j in range(len(trainLabels)):   #for each training set of the word
+            if(trainLabels[j] == 0 and wordLabels[j] == 0):
+                totalzerosbad += 1
+            elif(trainLabels[j] == 0 and wordLabels[j] == 1):
+                totalonesbad += 1
+            elif(trainLabels[j] == 1 and wordLabels[j] == 0):
+                totalzerosgood += 1
+            elif(trainLabels[j] == 1 and wordLabels[j] == 1):
+                totalonesgood += 1
+        # print(totalzerosbad, totalonesbad, totalzerosgood, totalonesgood)
+        zerobadprob = np.log((totalzerosbad + 1)/(len(trainLabels)-np.count_nonzero(trainLabels)+2))
+        onebadprob = np.log((totalonesbad + 1)/(len(trainLabels)-np.count_nonzero(trainLabels)+2))
+        zerogoodprob = np.log((totalzerosgood + 1)/(np.count_nonzero(trainLabels)+2))
+        onegoodprob = np.log((totalonesgood + 1)/(np.count_nonzero(trainLabels)+2))
+        probArray[0][i], probArray[1][i], probArray[2][i], probArray[3][i] = zerobadprob, onebadprob, zerogoodprob, onegoodprob
+        # print("last probArray:", probArray)
+        # break
+        # print("oneprob", oneprob, "zeroprob", zeroprob)
 
 
+    for sentence in testData:   #for each sentence in testData
+        #Get initial probabilities of negative review vs positive review
+        badprob = np.log((len(trainLabels)-np.count_nonzero(trainLabels))/len(trainLabels))
+        goodprob = np.log(np.count_nonzero(trainLabels)/len(trainLabels))
+        for i in range(len(sentence)-1):
+            if (sentence[i] == 0):
+                badprob +=probArray[0][i]
+                goodprob += probArray[2][i]
+            else:
+                badprob += probArray[1][i]
+                goodprob += probArray[3][i]
+        # print("badprob: ", badprob, "goodprob", goodprob)
+
+
+        if(badprob > goodprob):
+            testLabels.append(0)
+        else:
+            testLabels.append(1)
+    print(np.count_nonzero(np.equal(trueTestLabels, testLabels))/len(testLabels))
+        # break
 ###################
 #   Run program   #
 ###################
-pre_proccessing()
+train, test = pre_proccessing()
+predict_labels(train, test)
+# print(train[0])
+# print(test[0])
+# print("Vocab: ", vocab)
